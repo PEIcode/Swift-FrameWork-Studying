@@ -15,6 +15,7 @@ class ViewController: UIViewController {
     var fileURL: URL = (Realm.Configuration.defaultConfiguration.fileURL?.deletingLastPathComponent().appendingPathComponent("a.realm"))!
 
     let config = Realm.Configuration()
+    var token: NotificationToken?
     ///指定默认数据库的路径（Configuring a Local Realm）
     func setDefaultRealm(name: String) {
         var config = Realm.Configuration()
@@ -58,9 +59,12 @@ class ViewController: UIViewController {
 //            }
 //
 //        }
+
 //        creatRealm()
 
-        mergeRealm()
+//        mergeRealm()
+
+        testNotifaction()
     }
 //    #warning ("需要做什么")
 
@@ -111,6 +115,45 @@ class ViewController: UIViewController {
         }
         print(realm.configuration.fileURL!)
     }
+    /// NOtifiaction
+    func testNotifaction() {
+        let realm = try! Realm()
+        guard let result = realm.objects(Person.self).last else {
+            return
+        }
 
+        try! realm.write {
+            result.age = 80
+            result.address = "北京"
+        }
+
+        token = result.observe { (change) in
+            switch change {
+            case .error(let error):
+                print(error)
+            case .change(let properties):
+                print("打算修改")
+                for property in properties {
+                    if property.name == "age" && property.newValue as! Int > 50 {
+                        print("姓名修改成功！")
+                        self.token = nil
+                    }
+                    if property.name == "address" {
+                        print("地址修改成功")
+                        self.token = nil
+                    }
+                }
+            case .deleted:
+                print("The object was deleted")
+            }
+
+        }
+
+    }
+
+    deinit {
+        token?.invalidate()
+    }
 }
+
 
