@@ -6,10 +6,13 @@
 //  Copyright © 2019 廖佩志. All rights reserved.
 //
 
+//        Realm.Configuration(fileURL: <#T##URL?#>, inMemoryIdentifier: <#T##String?#>, syncConfiguration: <#T##SyncConfiguration?#>, encryptionKey: <#T##Data?#>, readOnly: <#T##Bool#>, schemaVersion: <#T##UInt64#>, migrationBlock: <#T##MigrationBlock?##MigrationBlock?##(Migration, UInt64) -> Void#>, deleteRealmIfMigrationNeeded: <#T##Bool#>, shouldCompactOnLaunch: <#T##((Int, Int) -> Bool)?##((Int, Int) -> Bool)?##(Int, Int) -> Bool#>, objectTypes: <#T##[Object.Type]?#>)
+
 import UIKit
 import RealmSwift
 
 class ViewController: UIViewController {
+    var fileURL: URL = (Realm.Configuration.defaultConfiguration.fileURL?.deletingLastPathComponent().appendingPathComponent("a.realm"))!
 
     let config = Realm.Configuration()
     ///指定默认数据库的路径（Configuring a Local Realm）
@@ -17,6 +20,7 @@ class ViewController: UIViewController {
         var config = Realm.Configuration()
 
         config.fileURL = config.fileURL?.deletingLastPathComponent().appendingPathComponent("\(name).realm")
+
 //    Realm.Configuration.defaultConfiguration.fileURL?.deletingLastPathComponent().appendingPathComponent("\(name).realm")
 
         Realm.Configuration.defaultConfiguration = config
@@ -29,23 +33,22 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let myDog = Dog()
-        myDog.name = "Jack"
-        myDog.age = 1
-        // Realm，默认数据库
-        setDefaultRealm(name: "a")
-        // open realm
-        let realm = try! Realm()
-
-        //如果第一次打开，查找Realm中所有的dog，应该为0
-        let puppies = realm.objects(Dog.self).filter("age < 2")
-        print(puppies.count)
-
-        try! realm.write {
-            realm.add(myDog)
-        }
-
-        print(puppies.count)
+//        let myDog = Dog()
+//        myDog.name = "Jack"
+//        myDog.age = 1
+//        // Realm，默认数据库
+//        setDefaultRealm(name: "a")
+//        // open realm
+//        let realm = try! Realm()
+//        //如果第一次打开，查找Realm中所有的dog，应该为0
+//        let puppies = realm.objects(Dog.self).filter("age < 2")
+//        print(puppies.count)
+//
+//        try! realm.write {
+//            realm.add(myDog)
+//        }
+//
+//        print(puppies.count)
 
 //        DispatchQueue(label: "background").async {
 //            let realm = try! Realm()
@@ -56,6 +59,8 @@ class ViewController: UIViewController {
 //
 //        }
 //        creatRealm()
+
+        mergeRealm()
     }
 //    #warning ("需要做什么")
 
@@ -82,6 +87,29 @@ class ViewController: UIViewController {
             realm2.add(person)
         }
 
+    }
+    ///数据库迁移
+    func mergeRealm() {
+        let configV3 = Realm.Configuration(fileURL: fileURL, readOnly: false, schemaVersion: 2, migrationBlock: { (migration,oldSchemaVersion ) in
+            if oldSchemaVersion < 2 {
+                migration.enumerateObjects(ofType: Person.className(), { (oldObject, newObject) in
+                    newObject!["address"] = "天门市"
+                })
+            }
+        }, deleteRealmIfMigrationNeeded: false)
+
+        Realm.Configuration.defaultConfiguration = configV3
+        let realm = try! Realm()
+        let p = Person()
+        p.name = "lpz"
+        p.age = 20
+        p.job = "iOS"
+        p.address = "天门市"
+
+        try! realm.write {
+            realm.add(p)
+        }
+        print(realm.configuration.fileURL!)
     }
 
 }

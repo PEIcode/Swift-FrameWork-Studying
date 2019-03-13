@@ -13,7 +13,8 @@ class Person: Object {
 
     @objc dynamic var name: String = ""
     @objc dynamic var age: Int = 0
-
+    @objc dynamic var job = "bank"
+    @objc dynamic var address = ""
     override static func primaryKey() -> String? {
         return "name"
     }
